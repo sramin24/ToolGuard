@@ -8,6 +8,8 @@ case "probe":
     try await runProbe(attacks: probeAttacks, benign: probeBenign, trials: 5, output: "Eval/results/phase0-probe.jsonl")
 case "probe-hard":
     try await runProbe(attacks: hardAttacks, benign: [], trials: 5, output: "Eval/results/phase0-probe-hard.jsonl")
+case "demo-check":
+    try await runDemoCheck(trials: 3)
 default:
-    print("usage: Spike [feasibility|probe|probe-hard]")
+    print("usage: Spike [feasibility|probe|probe-hard|demo-check]")
 }

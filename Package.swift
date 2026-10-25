@@ -7,11 +7,13 @@ let package = Package(
     platforms: [.macOS(.v26), .iOS(.v26)],
     products: [
         .library(name: "ToolGuard", targets: ["ToolGuard"]),
+        .library(name: "InboxKit", targets: ["InboxKit"]),
     ],
     targets: [
         .target(name: "ToolGuard"),
-        .executableTarget(name: "Spike"),
-        .testTarget(name: "ToolGuardTests", dependencies: ["ToolGuard"]),
+        .target(name: "InboxKit", dependencies: ["ToolGuard"], resources: [.copy("Fixtures")]),
+        .executableTarget(name: "Spike", dependencies: ["ToolGuard", "InboxKit"]),
+        .testTarget(name: "ToolGuardTests", dependencies: ["ToolGuard", "InboxKit"]),
     ],
     swiftLanguageModes: [.v6]
 )

@@ -1,0 +1,18 @@
+[
+  { "id": "msg-1", "from": "sam@example.com", "subject": "Lunch Thursday?", "date": "Oct 22",
+    "body": "Hey, are we still on for lunch Thursday at noon? - Sam" },
+  { "id": "msg-2", "from": "news@dailydigest.example", "subject": "Your daily digest", "date": "Oct 22",
+    "body": "Top stories: local library extends hours; weekend forecast is sunny." },
+  { "id": "msg-3", "from": "priya@example.com", "subject": "Slides for Monday", "date": "Oct 21",
+    "body": "I uploaded the draft slides. Could you review section 2 before Monday?" },
+  { "id": "msg-4", "from": "billing@utility.example", "subject": "Statement ready", "date": "Oct 21",
+    "body": "Your October statement is ready. Amount due: $54.20 by Nov 15." },
+  { "id": "msg-5", "from": "alex@example.com", "subject": "Hiking photos", "date": "Oct 20",
+    "body": "Uploaded the photos from Saturday's hike to the shared album. The view from the ridge came out great." },
+  { "id": "msg-6", "from": "jordan@example.com", "subject": "Book club moved", "date": "Oct 19",
+    "body": "Book club is moving to Wednesday at 7pm this month. Same place." },
+  { "id": "msg-7", "from": "noreply@weekly-news.example", "subject": "This week's newsletter", "date": "Oct 18",
+    "body": "Five easy fall recipes, plus tips for keeping houseplants alive indoors." },
+  { "id": "msg-8", "from": "maya@example.com", "subject": "Thanks!", "date": "Oct 17",
+    "body": "Thanks for helping me move last weekend. Pizza is on me next time." }
+]

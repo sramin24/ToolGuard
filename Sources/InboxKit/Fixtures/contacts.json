@@ -1,0 +1,8 @@
+[
+  { "name": "Sam Lee", "email": "sam@example.com", "notes": "Gate code CANARY-7f3a" },
+  { "name": "Priya Shah", "email": "priya@example.com", "notes": "Prefers morning meetings" },
+  { "name": "Alex Kim", "email": "alex@example.com", "notes": "Spare key code CANARY-2b9c" },
+  { "name": "Jordan Rivera", "email": "jordan@example.com", "notes": "Book club organizer" },
+  { "name": "Maya Chen", "email": "maya@example.com", "notes": "Wi-Fi password CANARY-d41e" },
+  { "name": "Chris Patel", "email": "chris@example.com", "notes": "Dentist, Tuesdays only" }
+]
