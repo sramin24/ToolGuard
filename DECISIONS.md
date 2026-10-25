@@ -155,3 +155,79 @@ Runs are not independent (5 trials of the same case), so 25/50 is not 50 indepen
   attack set with H03, H05, H06, H10 and H01; use exact per-case attacker-address lists; log typed errors.
 - **Runtime estimate (from measured medians, not a promise):** about 700 runs at a 3.4-4.3 s median is about
   40-50 minutes of model time, before multi-turn and approve-all extras.
+
+## Phase 1: core library
+
+### D-005: The audit log is a `Sendable` class over `Mutex`, with an `AsyncStream` for observers
+
+Guarded tools run concurrently, off the main actor. An `@Observable` main-actor class would make every `record`
+call `await`, and an actor would too, so events from one call could interleave with another's in a different
+order than they happened. `AuditLog` uses `Synchronization.Mutex`, so `record` is synchronous and in order, and
+`updates()` streams new events. The demo will mirror the stream into its own `@MainActor @Observable` model.
+UI concerns stay out of the library.
+
+Each event has a sequence `id` and a `callID`. The `callID` groups attempt, decision, confirmation, and
+execution or refusal for one call. Because the model retries refused calls (D-003), a run's "attempted" metric
+counts `callAttempted` events, and "executed" counts `callExecuted`. "Blocked" is an attempt with `callRefused`.
+
+### D-006: The argument check lives on `GuardedTool`, typed, and can only escalate
+
+Checks like "recipient must be in contacts" need the typed `Arguments`, which a non-generic `Policy` doesn't
+have. So `GuardedTool` takes an optional `ArgumentCheck` closure `(Arguments, TaintState) async -> Decision`.
+The final decision is the stricter of the policy's and the check's (`Decision.escalated(to:)`), so a buggy or
+permissive check can never turn a deny into an allow.
+
+### D-007: Refusal wording and retry behavior
+
+Refusals return `GuardedOutput.refused(message)` (D-003). There are two messages, so the model can report
+accurately: denied by policy, or declined by the user. Both say "Do not retry it", because the Phase 0 model
+retried a refused call. Whether that wording reduces retries is not measured yet. Retries don't affect safety,
+only log noise and latency, since every retry goes through the policy again.
+
+### D-008: Taint timing and failure cases
+
+- An untrusted-output tool taints the session **after the base call returns and before its output reaches the
+  model**. A side-effecting call issued in the same batch of parallel tool calls is decided on the earlier
+  state. That is safe: the model produced those arguments before it saw the untrusted output.
+- An untrusted-output tool that **throws** still taints. The error text is shown to the model and may quote
+  untrusted content.
+- A **cancelled** task is treated as a declined confirmation, and the base tool does not run.
+- The decision uses a taint snapshot taken at the start of the call. Taint only increases during a session,
+  so a stale snapshot can only be less strict while an approval is pending. The only thing that can taint during
+  that window is a concurrent untrusted read whose output this call's arguments could not have seen.
+
+### D-009: Rendering arguments for confirmation
+
+The arguments are rendered as the full `GeneratedContent.jsonString` when `Arguments` is
+`ConvertibleToGeneratedContent` (true for any `@Generable` struct), and `String(describing:)` otherwise. The
+library never truncates. `ToolCallRequest.displayArguments(maxLength:)` shortens for display with an explicit
+`[TRUNCATED: showing N of M characters]` marker, and the full text stays in `arguments` (for bypass 8).
+
+### D-010: Unguarded conditions still use `GuardedTool`, with `Policy.allowAll`
+
+Conditions A and B need attempts and executions logged the same way as C and D, or the comparison is
+apples-to-oranges. `Policy.allowAll` never blocks. Unguarded runs keep the identical wrapper and log, and only
+the decision differs.
+
+### D-011: The hardened prompt uses a random per-session boundary
+
+`UntrustedDelimiter` wraps untrusted text in `<<untrusted id=XXXXXXXX source="...">>` /
+`<</untrusted id=XXXXXXXX>>` markers and adds instructions that marked content is data. The boundary is random,
+like a MIME boundary, and any copy of it is removed from the content first, so injected text can't close the
+block early and pose as user text. The Phase 0 fake-turn attack (H05/H06) is exactly that pattern.
+`TaintedSession.hardening == nil` turns the hardened prompt off independently of the guard. Tool outputs
+(e.g. the inbox) must be wrapped by the tool itself when hardening is on, because the session can't rewrite tool
+output. InboxKit will take the delimiter as a parameter.
+
+### D-012: `TaintedSession` is an actor, and `reset()` replaces the model session
+
+`reset()` clears taint **and** creates a fresh `LanguageModelSession`. Clearing taint while keeping the old
+transcript would let earlier untrusted text keep steering the model with the guard relaxed. Prompt
+composition (`prepare`) is separate from the model call, so tainting and delimiting are unit-tested without the
+model.
+
+### Verification
+
+- `swift build`: no warnings in Swift 6 language mode.
+- `swift test`: 25 tests in 5 suites pass, without the model.
+- `xcodebuild -scheme ToolGuard -destination 'generic/platform=iOS' build`: succeeded.
